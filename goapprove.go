@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"net/url"
 	"os"
 	"strconv"
@@ -13,6 +14,14 @@ import (
 	"github.com/google/go-github/v43/github"
 	"golang.org/x/oauth2"
 )
+
+var goapproveConfigFilePath string = os.ExpandEnv("$HOME/.goapprove.json")
+
+func check(e error) {
+	if e != nil {
+		panic(e)
+	}
+}
 
 var pr_actions = map[string]string{
 	"approve": "APPROVE",
@@ -31,10 +40,59 @@ func print(color string, message string) {
 	fmt.Println(string(color_palettes[color]), message, color_palettes["reset"])
 }
 
+type GoapproveConfig struct {
+	Ghtoken string `json:"github_token"`
+}
+
+func validateGhToken(ghToken string) {
+	ctx := context.Background()
+	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: ghToken})
+	tc := oauth2.NewClient(ctx, ts)
+	client := github.NewClient(tc)
+
+	_, _, err := client.Repositories.List(ctx, "github", nil)
+	if err != nil {
+		print("red", "Invalid token")
+		os.Exit(1)
+	}
+}
+
+func renewGhToken() {
+	ghToken := ""
+	hasConfigFile := false
+	print("yellow", "Generate token at https://github.com/settings/tokens/new?scopes=repo&description=goapprove-cli")
+	fmt.Print("GITHUB_TOKEN: ")
+	fmt.Scanf("%s", &ghToken)
+	validateGhToken(ghToken)
+	print("green", "Token is valid")
+
+	var jsonBlob = []byte(`{"github_token": "` + ghToken + `"}`)
+	goapproveConfig := GoapproveConfig{}
+	err := json.Unmarshal(jsonBlob, &goapproveConfig)
+	if err != nil {
+		panic(err)
+	}
+	if _, err := os.Stat(goapproveConfigFilePath); err == nil {
+		hasConfigFile = true
+	}
+	if os.Getenv("CI") != "true" {
+		goapproveConfigJson, _ := json.Marshal(goapproveConfig)
+		if !hasConfigFile {
+			// create one
+			f, err := os.Create(goapproveConfigFilePath)
+			check(err)
+			defer f.Close()
+			err = ioutil.WriteFile(goapproveConfigFilePath, goapproveConfigJson, 0644)
+			check(err)
+		}
+	}
+}
+
 func main() {
 	var pr_url = flag.String("url", "", "PR URL")
 	var message = flag.String("message", "LGTM", "message body")
 	var action = flag.String("action", "approve", "review action")
+	var auth = flag.Bool("auth", false, "renew github token")
 	var help = flag.Bool("help", false, "Help message")
 	flag.Parse()
 
@@ -42,8 +100,9 @@ func main() {
 		fmt.Println("Usage: goapprove [options]")
 		print("yellow", "Options:")
 		fmt.Println("  -url: PR URL")
-		fmt.Println("  -message: message body")
-		fmt.Println("  -action: review action")
+		fmt.Println("  -message: message body, default is LGTM")
+		fmt.Println("  -action: review action: approve|request|comment, default is approve")
+		fmt.Println("  -auth: renew github token")
 		fmt.Println("  -help: help message")
 		fmt.Println("")
 		print("yellow", "Requirements:")
@@ -54,12 +113,27 @@ func main() {
 		fmt.Println("goapprove -url https://github.com/amazingandyyy/goapprove/pull/1 -action comment -message \"LGTM 🚀\"")
 		os.Exit(0)
 	}
+	if *auth {
+		renewGhToken()
+		os.Exit(0)
+	}
+	ghToken := os.Getenv("GITHUB_TOKEN")
+	if _, err := os.Stat(goapproveConfigFilePath); err == nil {
+		// config file does exist
+		config, _ := os.ReadFile(goapproveConfigFilePath)
+		var goapproveConfig GoapproveConfig
+		err := json.Unmarshal(config, &goapproveConfig)
+		if err != nil {
+			panic(err)
+		}
+		if goapproveConfig.Ghtoken != "" {
+			ghToken = goapproveConfig.Ghtoken
+		}
+		validateGhToken(ghToken)
+	}
 
-	token := os.Getenv("GITHUB_TOKEN")
-	if token == "" {
-		print("yellow", "Generate token at https://github.com/settings/tokens/new?scopes=repo&description=goapprove-cli")
-		fmt.Print("GITHUB_TOKEN: ")
-		fmt.Scanf("%s", &token)
+	if ghToken == "" {
+		renewGhToken()
 	}
 
 	if *pr_url == "" {
@@ -74,18 +148,20 @@ func main() {
 	pr := strings.Split(parsed_url.Path, "/")
 
 	ctx := context.Background()
-	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: token})
+	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: ghToken})
 	tc := oauth2.NewClient(ctx, ts)
 	client := github.NewClient(tc)
 
-	body := fmt.Sprintf("%s\n\n%v", *message, "<p align='right'>☘️ reviewed from my terminal via <a href='https://github.com/amazingandyyy/goapprove' target='_blank'>goapprove</a></p>")
+	body := fmt.Sprintf("%s\n\n%v", *message, "<p align='right'>☘️ reviewed via <a href='https://github.com/amazingandyyy/goapprove' target='_blank'>goapprove</a></p>")
 
 	opts := &github.PullRequestReviewRequest{
 		Body:  github.String(body),
 		Event: github.String(pr_actions[*action]),
 	}
 	pr_number, _ := strconv.Atoi(pr[4])
-	pr_review, resp, _ := client.PullRequests.CreateReview(ctx, pr[1], pr[2], pr_number, opts)
+	pr_owner := pr[1]
+	pr_repo := pr[2]
+	pr_review, resp, _ := client.PullRequests.CreateReview(ctx, pr_owner, pr_repo, pr_number, opts)
 
 	defer resp.Body.Close()
 
@@ -95,7 +171,7 @@ func main() {
 	var j GitHubResponse
 	json.NewDecoder(resp.Body).Decode(&j)
 	if len(j.Errors) == 0 && resp.StatusCode != 200 {
-		print("red", fmt.Sprintf("Error: %v", j.Errors[0]))
+		print("red", fmt.Sprintf("Error: %v", j.Errors))
 		os.Exit(1)
 	}
 
