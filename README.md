@@ -10,14 +10,16 @@ bash <(curl -sL https://raw.githubusercontent.com/amazingandyyy/goapprove/main/i
 
 ## Preparation
 
-- [Generate a Github personal access token](https://github.com/settings/tokens/new) with [repo] scope
-
-<img width="604" alt="Screen Shot 2022-04-17 at 01 16 03" src="https://user-images.githubusercontent.com/7886068/163695085-33ded5f8-4f0f-4c73-8c84-c7b434194177.png">
+- [Generate a Github personal access token](https://github.com/settings/tokens/new?scopes=repo&description=goapprove-cli)
+  - [repo] scrope
+  - [no expiration]
 
 ## Usage
 
 ```
+goapprove -help
 goapprove -url https://github.com/amazingandyyy/go-approve/pull/1
+goapprove -url https://github.com/amazingandyyy/go-approve/pull/1 -action comment -message "LGTM!"
 ```
 
 ## LICENSE
