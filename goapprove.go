@@ -78,8 +78,10 @@ func main() {
 	tc := oauth2.NewClient(ctx, ts)
 	client := github.NewClient(tc)
 
+	body := fmt.Sprintf("%s\n\n%v", *message, "<p align='right'>☘️ reviewed from my terminal via <a href='https://github.com/amazingandyyy/goapprove' target='_blank'>goapprove</a></p>")
+
 	opts := &github.PullRequestReviewRequest{
-		Body:  github.String(*message),
+		Body:  github.String(body),
 		Event: github.String(pr_actions[*action]),
 	}
 	pr_number, _ := strconv.Atoi(pr[4])
