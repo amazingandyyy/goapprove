@@ -14,4 +14,4 @@ sudo touch /opt/homebrew/bin/goapprove &&
 mv -f goapprove-$version/bin/goapprove /opt/homebrew/bin &&
 rm -rf goapprove-$version $version.zip
 
-echo "> install goapprove@$version success! try 'goapprove --url'"
+echo "> install goapprove@$version success! try 'goapprove -url <PR URL>'"
