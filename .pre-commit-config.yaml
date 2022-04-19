@@ -1,0 +1,46 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v3.4.0
+    hooks:
+      - id: check-json
+      - id: check-yaml
+        args: [--allow-multiple-documents]
+      - id: pretty-format-json
+        args:
+          - --autofix
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+  - repo: https://github.com/pre-commit/mirrors-prettier
+    rev: v2.3.0
+    hooks:
+      - id: prettier
+        stages: [commit]
+  - repo: https://github.com/alessandrojcm/commitlint-pre-commit-hook
+    rev: v4.1.0
+    hooks:
+      - id: commitlint
+        stages: [commit-msg]
+        additional_dependencies: ["@commitlint/config-conventional"]
+  - repo: https://github.com/jumanjihouse/pre-commit-hooks
+    rev: 2.1.6
+    hooks:
+      - id: shellcheck
+        args: ["--exclude=SC2086,SC2155"]
+      - id: shfmt
+      - id: script-must-have-extension
+      - id: markdownlint # Configure in .mdlrc
+        args: ["-r ~MD013,~MD033,~MD002"]
+  - repo: https://github.com/rhysd/actionlint
+    rev: v1.6.8
+    hooks:
+      - id: actionlint
+  - repo: https://github.com/amazingandyyy/pre-commit-golang
+    # fork dnephin/pre-commit-golang to fix go vet
+    rev: v0.5.1
+    hooks:
+      # lint -> fmt -> vet https://sparkbox.com/foundry/go_vet_gofmt_golint_to_code_check_in_Go
+      - id: golangci-lint
+      - id: go-fmt
+      - id: go-vet
+      - id: no-go-testing
+      - id: go-mod-tidy
