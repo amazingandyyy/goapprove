@@ -4,7 +4,7 @@ export package_name=goapprove
 export author=amazingandyyy
 # get the latest version or change to a specific version
 export latest_version=$(curl --silent "https://api.github.com/repos/$author/$package_name/releases/latest" | grep '"tag_name"' | sed -E 's/.*"([^"]+)".*/\1/')
-[[ -n "$1" ]] && latest_version=$1
+[[ -n "$1" ]] && latest_version="v$1"
 
 if ! command -v $package_name &>/dev/null; then
 	echo "Installing $package_name@$latest_version"
@@ -19,12 +19,12 @@ userlocalbin=/usr/local/bin/$package_name
 
 curl -Ls "https://github.com/$author/$package_name/archive/refs/tags/$latest_version.tar.gz" -o $tmpoupoutputgz
 tar -zxf $tmpoupoutputgz --directory /tmp
+fmptaroutput_name=$package_name-$(echo $latest_version | cut -dv -f2)
 if ! ls -d $userlocalbin >/dev/null 2>&1; then
-	sudo touch $userlocalbin && mv $fmpfolder/$package_name-$latest_version/bin/$package_name $userlocalbin
+	sudo touch $userlocalbin && mv $fmpfolder/$fmptaroutput_name/bin/$package_name $userlocalbin
 else
-	sudo mv $fmpfolder/$package_name-$latest_version/bin/$package_name $userlocalbin
+	sudo mv $fmpfolder/$fmptaroutput_name/bin/$package_name $userlocalbin
 fi
-chmod +x $userlocalbin
 
 # shellcheck disable=SC2115
 rm -rf $fmpfolder/$package_name $tmpoupoutput $tmpoupoutputgz

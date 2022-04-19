@@ -94,26 +94,8 @@ func main() {
 	var message = flag.String("message", "LGTM", "message body")
 	var action = flag.String("action", "approve", "review action")
 	var auth = flag.Bool("auth", false, "renew github token")
-	var help = flag.Bool("help", false, "Help message")
 	flag.Parse()
 
-	if *help {
-		print("green", "Usage: goapprove [options]")
-		print("yellow", "Options:")
-		fmt.Println("  -url: PR URL")
-		fmt.Println("  -message: message body, default is LGTM")
-		fmt.Println("  -action: review action: approve|request|comment, default is approve")
-		fmt.Println("  -auth: renew github token")
-		fmt.Println("  -help: help message")
-		fmt.Println("")
-		print("yellow", "Requirements:")
-		fmt.Println("GITHUB_TOKEN environment variable is needed")
-		fmt.Println("Generate token at https://github.com/settings/tokens/new?scopes=repo&description=goapprove-cli")
-		fmt.Println("")
-		print("yellow", "Example:")
-		fmt.Println("goapprove -url https://github.com/amazingandyyy/goapprove/pull/1 -action comment -message \"LGTM 🚀\"")
-		os.Exit(0)
-	}
 	if *auth {
 		renewGhToken()
 		os.Exit(0)

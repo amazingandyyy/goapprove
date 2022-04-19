@@ -5,6 +5,5 @@ export package_name=$(basename $REPO_DIR)
 
 (
 	set -x
-	go build $REPO_DIR/cmd/main.go
+	go build -o $REPO_DIR/bin/$package_name $REPO_DIR/cmd/main.go
 )
-mv $REPO_DIR/main $REPO_DIR/bin/$package_name
