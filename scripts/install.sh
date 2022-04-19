@@ -24,6 +24,7 @@ if ! ls -d $userlocalbin >/dev/null 2>&1; then
 else
 	sudo mv $fmpfolder/$package_name-$latest_version/bin/$package_name $userlocalbin
 fi
+chmod +x $userlocalbin
 
 # shellcheck disable=SC2115
 rm -rf $fmpfolder/$package_name $tmpoupoutput $tmpoupoutputgz
