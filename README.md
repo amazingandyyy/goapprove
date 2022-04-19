@@ -16,7 +16,7 @@ use it carefully
 It's easy!
 
 ```sh
-bash <(curl -sL https://raw.githubusercontent.com/amazingandyyy/goapprove/main/install.sh)
+bash <(curl -sL https://raw.githubusercontent.com/amazingandyyy/goapprove/main/scripts/install.sh)
 ```
 
 ## Preparation
