@@ -159,6 +159,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	done_msg := fmt.Sprintf("%v with message on %q %v", *action, *message, *pr_review.HTMLURL)
+	done_msg := fmt.Sprintf("%v with message %q on %v", *action, *message, *pr_review.HTMLURL)
 	print("green", done_msg)
 }
